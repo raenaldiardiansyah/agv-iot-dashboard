@@ -17,7 +17,7 @@ export default function Dashboard() {
   const [load, setLoad] = useState(0);
   const [light, setLight] = useState(0);
   const [operatorName, setOperatorName] = useState("OP-8821");
-  const [logs, setLogs] = useState<string[]>([]);
+  const [, setLogs] = useState<string[]>([]);
 
   const [, setLocation] = useLocation();
 
