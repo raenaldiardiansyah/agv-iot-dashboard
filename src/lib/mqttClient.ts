@@ -1,14 +1,11 @@
+// src/lib/mqttClient.ts
 import mqtt from "mqtt";
 
 export const mqttClient = mqtt.connect(
-  "wss://broker.mqttdashboard.com:8000/mqtt"
+  "wss://broker.hivemq.com:8884/mqtt"   // ← URL baru
 );
 
 mqttClient.on("connect", () => {
-  console.log("✅ MQTT Connected (Cloud WS)");
+  console.log("✅ MQTT Connected (HiveMQ WS)");
   mqttClient.subscribe("agv/raenaldiAS/#");
-});
-
-mqttClient.on("error", (err) => {
-  console.error("MQTT error", err);
 });
