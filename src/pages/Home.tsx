@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, Component, type ErrorInfo, type ReactNode } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useGLTF, Float, useAnimations } from "@react-three/drei";
 import { SkeletonUtils } from "three-stdlib";
@@ -8,8 +8,80 @@ import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import * as THREE from "three";
 
+// Error Boundary untuk handle model loading error
+class ModelErrorBoundary extends Component<
+  { children: ReactNode; fallback: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode; fallback: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.warn('Model loading error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
+
+      // Fallback robot component
+function FallbackRobot({ mouseX }: { mouseX: number }) {
+  const group = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (group.current) {
+      const targetRotationY = mouseX * 0.5;
+      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, targetRotationY, 0.05);
+      group.current.position.y = Math.sin(state.clock.getElapsedTime()) * 0.1;
+    }
+  });
+  
+  return (
+    <group ref={group}>
+      {/* Placeholder robot sebagai fallback */}
+      <mesh scale={1.5} position={[0, -1, 0]}>
+        <boxGeometry args={[1.5, 0.8, 1]} />
+        <meshStandardMaterial 
+          color="#00ff88" 
+          emissive="#00ff88" 
+          emissiveIntensity={0.3}
+          metalness={0.8}
+          roughness={0.2}
+        />
+      </mesh>
+      {/* Wheels */}
+      <mesh position={[0.6, -1.4, 0.5]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      <mesh position={[-0.6, -1.4, 0.5]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      <mesh position={[0.6, -1.4, -0.5]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+      <mesh position={[-0.6, -1.4, -0.5]}>
+        <cylinderGeometry args={[0.2, 0.2, 0.1, 16]} />
+        <meshStandardMaterial color="#333" />
+      </mesh>
+    </group>
+  );
+}
+
       // Load actual robot.glb model
-function RobotModel({ mouseX }: { mouseX: number }) {
+function RobotModelInternal({ mouseX }: { mouseX: number }) {
   const group = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF("/robot.glb");
   
@@ -19,15 +91,17 @@ function RobotModel({ mouseX }: { mouseX: number }) {
   const { actions, names } = useAnimations(animations, group);
   
   React.useEffect(() => {
-    console.log('Available animations:', names);
-    
-    names.forEach(name => {
-      const action = actions[name];
-      if (action) {
-        console.log('Playing:', name);
-        action.reset().play();
-      }
-    });
+    if (names && names.length > 0) {
+      console.log('Available animations:', names);
+      
+      names.forEach(name => {
+        const action = actions[name];
+        if (action) {
+          console.log('Playing:', name);
+          action.reset().play();
+        }
+      });
+    }
   }, [actions, names]);
 
   useFrame((state) => {
@@ -59,6 +133,15 @@ function RobotModel({ mouseX }: { mouseX: number }) {
         </mesh>
       </Float>
     </group>
+  );
+}
+
+      // Wrapper dengan ErrorBoundary
+function RobotModel({ mouseX }: { mouseX: number }) {
+  return (
+    <ModelErrorBoundary fallback={<FallbackRobot mouseX={mouseX} />}>
+      <RobotModelInternal mouseX={mouseX} />
+    </ModelErrorBoundary>
   );
 }
 
@@ -252,7 +335,17 @@ export default function Home() {
         {/* 3D Canvas Area */}
         <div className="flex-1 relative">
           <div className="absolute inset-0 z-0">
-            <Canvas camera={{ position: [0, 0, 6], fov: 45 }}>
+            <Canvas 
+              camera={{ position: [0, 0, 6], fov: 45 }}
+              gl={{ 
+                antialias: true,
+                alpha: false,
+                powerPreference: "high-performance"
+              }}
+              onCreated={({ gl }) => {
+                gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+              }}
+            >
               <ambientLight intensity={0.5} />
               <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} color="#00ff88" />
               <pointLight position={[-10, -10, -10]} intensity={0.5} color="#ff00ff" />
