@@ -4,7 +4,7 @@ import { Shell } from "@/components/layout/shell";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NeonButton } from "@/components/ui/neon-button";
 import { StatGauge } from "@/components/ui/stat-gauge";
-import { LogOut, Power, Activity, User, Cpu, Zap, Radio } from "lucide-react";
+import { LogOut, Power, Activity, User, Cpu, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { logout, getCurrentUser } from "@/lib/auth";
@@ -15,7 +15,6 @@ export default function Dashboard() {
   const [agvStatus, setAgvStatus] = useState<"STOPPED" | "RUNNING">("STOPPED");
   const [battery, setBattery] = useState(85);
   const [load, setLoad] = useState(0);
-  const [light, setLight] = useState(0);
   const [operatorName, setOperatorName] = useState("OP-8821");
   const [, setLogs] = useState<string[]>([]);
 
@@ -30,21 +29,21 @@ export default function Dashboard() {
     }
   }, [setLocation]);
 
-
   useEffect(() => {
-     const handler = (topic: string, msg: Buffer) => {
+    const handler = (topic: string, msg: Buffer) => {
       const v = msg.toString();
 
       if (topic === "agv/raenaldiAS/vpin/V1") setLoad(+v);
-      if (topic === "agv/raenaldiAS/vpin/V2") setLight(+v);
+      // if (topic === "agv/raenaldiAS/vpin/V2") {} // reserved
       if (topic === "agv/raenaldiAS/vpin/V3") setBattery(+v);
       if (topic === "agv/raenaldiAS/vpin/V4") setAgvStatus(v as "STOPPED" | "RUNNING");
 
       setLogs(l => [`${topic} → ${v}`, ...l.slice(0, 20)]);
     };
-  mqttClient.on("message", handler);
-  return () => {
-    mqttClient.off("message", handler);};
+    mqttClient.on("message", handler);
+    return () => {
+      mqttClient.off("message", handler);
+    };
   }, []);
 
   const startEngine = () => {
@@ -120,7 +119,7 @@ export default function Dashboard() {
       </GlassCard>
 
       {/* GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         <GlassCard className="p-8 flex flex-col items-center justify-center min-h-[320px] bg-black/60 relative">
           <div className="absolute top-4 left-4 flex items-center gap-2">
@@ -128,14 +127,6 @@ export default function Dashboard() {
             <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">Sensor: LoadCell</span>
           </div>
           <StatGauge value={parseFloat(load.toFixed(2))} max={5} unit="KG" label="Load Weight" color="blue" />
-        </GlassCard>
-
-        <GlassCard className="p-8 flex flex-col items-center justify-center min-h-[320px] bg-black/60 relative">
-          <div className="absolute top-4 left-4 flex items-center gap-2">
-            <Radio className="w-4 h-4 text-neon-green/50" />
-            <span className="text-[10px] font-mono text-white/30 uppercase tracking-widest">Sensor: LDR</span>
-          </div>
-          <StatGauge value={Math.round(light)} max={100} unit="%" label="Light Intensity" color="green" />
         </GlassCard>
 
         <GlassCard className="p-8 flex flex-col items-center justify-center min-h-[320px] bg-black/60 relative">
