@@ -252,13 +252,13 @@ export default function Dashboard() {
   }, [logs]);
 
   const startEngine = () => {
-    mqttClient.publish("agv/raenaldiAS/vpin/V5", "START");
+    mqttClient.publish("agv/raenaldiAS/vpin/V5", "START", { retain: false, qos: 0 }); // ← UBAH
     const time = new Date().toLocaleTimeString("id-ID", { hour12: false });
     setLogs(l => [`[${time}] → START command sent`, ...l.slice(0, 49)]);
   };
 
   const stopEngine = () => {
-    mqttClient.publish("agv/raenaldiAS/vpin/V5", "STOP");
+    mqttClient.publish("agv/raenaldiAS/vpin/V5", "STOP", { retain: false, qos: 0 }); // ← UBAH
     const time = new Date().toLocaleTimeString("id-ID", { hour12: false });
     setLogs(l => [`[${time}] → STOP command sent`, ...l.slice(0, 49)]);
   };

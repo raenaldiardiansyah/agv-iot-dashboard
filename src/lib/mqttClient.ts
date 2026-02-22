@@ -8,7 +8,7 @@ const MQTT_OPTIONS: mqtt.IClientOptions = {
   clean: true,
   connectTimeout: 4000,
   reconnectPeriod: 1000,
-  keepalive: 60,
+  keepalive: 15,
 };
 
 // Buat koneksi MQTT
